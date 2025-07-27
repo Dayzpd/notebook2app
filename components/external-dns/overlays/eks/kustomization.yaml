@@ -26,7 +26,6 @@ patches:
         - --registry=noop
         - --policy=upsert-only
         - --provider=cloudflare
-        - --cloudflare-proxied
         - --cloudflare-record-comment="provisioned by external-dns"
   target:
     group: apps
