@@ -23,8 +23,6 @@ patches:
       value:
         - --source=service
         - --source=ingress
-        - --source=gateway-httproute
-        - --source=gateway-grpcroute
         - --registry=noop
         - --policy=upsert-only
         - --provider=cloudflare
