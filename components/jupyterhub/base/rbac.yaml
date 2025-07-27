@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: notebook2app
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: notebook2app-role
+  namespace: jupyter
+rules:
+- apiGroups: [""]
+  resources: ["pods", "configmaps", "services"]
+  verbs: ["get", "watch", "create", "update", "delete", "patch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "watch", "create", "update", "delete", "patch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["get", "watch", "create", "update", "delete", "patch"]
+- apiGroups: ["gateway.networking.k8s.io"]
+  resources: ["gateways","httproutes"]
+  verbs: ["get", "watch", "create", "update", "delete", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: notebook2app-rolebinding
+  namespace: jupyter
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: notebook2app-role
+subjects:
+- kind: ServiceAccount
+  name: notebook2app
+  namespace: jupyter

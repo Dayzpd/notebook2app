@@ -1,0 +1,22 @@
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: myself@zachary.day
+    privateKeySecretRef:
+      name: letsencrypt
+    solvers:
+    - selector:
+        dnsZones:
+        - zachary.day
+      dns01:
+        cloudflare:
+          apiTokenSecretRef:
+            name: cloudflare-token
+            key: api-token

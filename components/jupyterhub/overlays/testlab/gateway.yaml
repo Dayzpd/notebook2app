@@ -1,0 +1,44 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: jupyterhub-gateway
+  namespace: jupyter
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: http
+    hostname: notebook2app.local.zachary.day
+    port: 443
+    protocol: HTTPS
+    allowedRoutes:
+      namespaces:
+        from: Same
+    tls:
+      mode: Terminate
+      certificateRefs:
+      - kind: Secret
+        name: jupyterhub-tls
+        namespace: jupyter
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: jupyterhub
+  namespace: jupyter
+spec:
+  parentRefs:
+  - name: jupyterhub-gateway
+    namespace: jupyter
+  hostnames:
+  - notebook2app.local.zachary.day
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: proxy-public
+      port: 80

@@ -1,0 +1,30 @@
+---
+
+# Note on using Sealed Secrets with Kustomize
+#
+# Kustomize allows you to define secret and configmap generators.
+# These generators append a suffix to secret/configmap resource names
+# when you apply kustomizations whilst also updating references to
+# your secrets/configmaps on other resources. This is useful because
+# it then triggers a rolling restart on pods. Otherwise, you would
+# have to manually run a "kubectl rollout restart ..." command.
+#
+# So the question is, how do we maintain this behavior whilst using
+# Sealed Secrets? We can do so by extending the functionality of
+# Kustomize's builtin transformers using a configuration file such as
+# this one here. In this file, we define a `nameReference` that
+# specifies the paths `metadata/name` and `spec/template/metadata/name`
+# should be updated for objects of kind `SealedSecret` if a `Secret` is
+# found with the same name.
+#
+# References:
+# - https://github.com/bitnami-labs/sealed-secrets/issues/167#issuecomment-1805190708
+# - https://faun.pub/sealing-secrets-with-kustomize-51d1b79105d8
+
+nameReference:
+  - kind: Secret
+    fieldSpecs:
+      - kind: SealedSecret
+        path: metadata/name
+      - kind: SealedSecret
+        path: spec/template/metadata/name
