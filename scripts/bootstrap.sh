@@ -30,7 +30,7 @@ function main() {
   echo "Bootstrapping cluster..."
 
   echo "Installing ArgoCD..."
-  installDefaultArgoCDOverlay
+  installArgoCDBase
 
   echo "Install bootstrap app..."
   installBootstrapApplication
