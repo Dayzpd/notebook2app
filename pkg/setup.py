@@ -12,9 +12,10 @@ setup(
     name="notebook2app",
     version="0.1.0",
     description="Deploy Python apps to Kubernetes from within a JupyterHub notebook.",
-    author="",
-    author_email="",
-    packages=find_packages(where="src"),
+    author="Zach Day",
+    author_email="zach@dayzpd.com",
+    license="MIT",
+    packages=find_packages(where="src", exclude=["notebook2app.templates"]),
     package_dir={"": "src"},
     package_data={
         "notebook2app": ["templates/*.j2"],
@@ -23,7 +24,6 @@ setup(
     install_requires=REQUIREMENTS_TXT,
     classifiers=[
         "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
