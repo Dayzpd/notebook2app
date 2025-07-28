@@ -2,6 +2,19 @@
 
 set -e
 
+function installESOBase() {
+
+  argocdBase="components/external-secrets/base"
+
+  kubectl apply --server-side -k $argocdBase
+
+  kubectl wait --timeout=120s -n external-secrets --for=condition=Available=True Deployment/external-secrets
+  kubectl wait --timeout=120s -n external-secrets --for=condition=Available=True Deployment/external-secrets-cert-controller
+  kubectl wait --timeout=120s -n external-secrets --for=condition=Available=True Deployment/external-secrets-webhook
+  kubectl wait --timeout=120s -n external-secrets --for=condition=Ready pod -l app.kubernetes.io/name=external-secrets
+
+}
+
 function installArgoCDBase() {
 
   argocdBase="components/argocd/base"
@@ -28,6 +41,9 @@ function installBootstrapApplication() {
 function main() {
 
   echo "Bootstrapping cluster..."
+
+  echo "Installing ESO..."
+  installESOBase
 
   echo "Installing ArgoCD..."
   installArgoCDBase

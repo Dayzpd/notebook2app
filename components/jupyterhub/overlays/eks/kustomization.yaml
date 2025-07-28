@@ -31,10 +31,10 @@ patches:
 - patch: |-
     - op: replace
       path: /spec/rules/0/host
-      value: notebook2app.zachary.day
+      value: notebook2app.eks.zachary.day
     - op: replace
       path: /spec/tls/0/hosts/0
-      value: notebook2app.zachary.day
+      value: notebook2app.eks.zachary.day
   target:
     group: networking.k8s.io
     kind: Ingress

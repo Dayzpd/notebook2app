@@ -17,7 +17,7 @@ spec:
   source:
     repoURL: https://github.com/Dayzpd/notebook2app
     targetRevision: HEAD
-    path: apps/
+    path: apps/rackspace-spot
   destination:
     name: in-cluster
   ignoreDifferences: []

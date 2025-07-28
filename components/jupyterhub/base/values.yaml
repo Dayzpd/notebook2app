@@ -417,7 +417,7 @@ singleuser:
     static:
       pvcName:
       subPath: "{username}"
-    capacity: 10Gi
+    capacity: 5Gi
     homeMountPath: /home/jovyan
     dynamic:
       storageClass:
@@ -432,25 +432,18 @@ singleuser:
     pullSecrets: []
   startTimeout: 300
   cpu:
-    limit: 0.5
-    guarantee: 0.25
+    limit: 1
+    guarantee: 0.5
   memory:
-    limit: 512M
-    guarantee: 256M
+    limit: 1G
+    guarantee: 512M
   extraResource:
     limits: {}
     guarantees: {}
   cmd: jupyterhub-singleuser
   defaultUrl:
   extraPodConfig: {}
-  profileList:
-  - description: Develop and deploy a Python app from a notebook.
-    display_name: notebook2app
-    kubespawner_override:
-      environment:
-        PYTHON_PATH: /home/jovyan
-        NOTEBOOK2APP_BASE_URL: "notebook2app.zachary.day"
-      image: quay.io/jupyter/scipy-notebook:python-3.12
+  profileList: []
 
 # scheduling relates to the user-scheduler pods and user-placeholder pods.
 scheduling:

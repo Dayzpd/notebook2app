@@ -1,6 +1,9 @@
 #!/bin/bash
 
-clusterName="eks-demo"
+clusterName="spotlab"
+proxyPort="8001"
+newVault="n"
+oidcProviderUrl="https://kubernetes.default.svc.cluster.local"
 oidcPem="scripts/oidc.pem"
 
 for arg in \"$@\"
@@ -8,6 +11,12 @@ for arg in \"$@\"
   case $1 in
     --cluster|-c)
       clusterName=$2
+    ;;
+    --proxy-port|-p)
+      proxyPort=$2
+    ;;
+    --new-vault|-n)
+      newVault="y"
     ;;
     --*)
       echo "Unknown option: $1"
@@ -17,25 +26,31 @@ for arg in \"$@\"
   shift
 done
 
+kubectl proxy --port=$proxyPort &
 
-oidcProviderUrl=$( aws eks describe-cluster \
-  --name demo-eks \
-  --query 'cluster.identity.oidc.issuer' \
-  --output text )
+sleep 1
 
 echo "Below is the OIDC issuer's JWK public key:"
 
-curl $oidcProviderUrl/keys | jq -r '.keys[0]'
+curl -s -k http://localhost:$proxyPort/openid/v1/jwks | jq -r '.keys[0]'
 
 echo "You can convert it to PEM encoding via https://8gwifi.org/jwkconvertfunctions.jsp"
 
 read -p "Press ENTER once you've got your PEM encoded OIDC issuer public key..." _
 
+fuser -k $proxyPort/tcp
+
 nano $oidcPem
 
-vault policy write $clusterName-policy scripts/vault-policy.hcl
+if [ $newVault = "y" ]; then
 
-vault auth enable -path=$clusterName-jwt jwt
+  vault secrets enable -path=$clusterName-kv -version=2 kv
+
+  vault policy write $clusterName-policy scripts/$clusterName-vault-policy.hcl
+
+  vault auth enable -path=$clusterName-jwt jwt
+
+fi
 
 vault write auth/$clusterName-jwt/role/external-secrets \
   role_type="jwt" \
