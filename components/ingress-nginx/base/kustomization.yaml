@@ -5,3 +5,14 @@ resources:
   - ./ingress-nginx.yaml
 patches:
 - path: patch-ingress-nginx-controller-configmap.yaml
+- patch: |-
+    - op: remove
+      path: /spec/ttlSecondsAfterFinished
+    - op: add
+      path: /metadata/annotations/argocd.argoproj.io~1hook-delete-policy
+      value: HookSucceeded
+  target:
+    group: batch
+    version: v1
+    kind: Job
+
