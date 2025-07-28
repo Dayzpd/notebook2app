@@ -20,5 +20,5 @@ jobs:
         file: ./Dockerfile
         push: true
         tags: |
-          ghcr.io/${{ github.repository_owner }}/notebook2app:latest
-          ghcr.io/${{ github.repository_owner }}/notebook2app:${{ github.run_number }}
+          ghcr.io/dayzpd/notebook2app:latest
+          ghcr.io/dayzpd/notebook2app:${{ github.run_number }}
