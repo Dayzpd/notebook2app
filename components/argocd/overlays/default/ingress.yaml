@@ -11,10 +11,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - argocd.zachary.day
+        - PATCH_ME
       secretName: argocd-server-tls
   rules:
-    - host: argocd.zachary.day
+    - host: PATCH_ME
       http:
         paths:
           - path: /
