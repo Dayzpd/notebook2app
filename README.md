@@ -19,7 +19,7 @@ Where I work if you want to deploy a new application, the process is red tap gal
 
 While these processes may work for groups inside a centralized IT organization, *what about everyone else?* If your company isn't primarily a software shop like mine is, you will likely have a ton of domain experts. Inevitably at a big enough company, some of those domain experts learn how to program in their free time. And from what I've observed, their language of choice is almost always Python. They're not always the best with Python. Many struggle with setting up Python and environments locally. However, they're very capable of cobbling together some code and making an app using one of Python's many frontend/backend mashup frameworks like Dash, Gradio, or Streamlit. They also don't typically make anything too complicated. The apps usually just take some inputs, run an algorithm, and spit out some result. 
 
-To me, this category of *domain expert apps* is both underserved and also a significant value capture opportunity. I've been maintaining a JupyterHub service in AKS for the past couple years, and having been asked recently if the following was possible, I hacked together a quick proof of concept to deploy basic python apps to kubernetes from a notebook session on JupyterHub.
+To me, this category of *domain expert apps* is both under-served and a significant value capture opportunity. I've been maintaining a JupyterHub service in AKS for the past couple years, and having been asked recently if the following was possible, I hacked together a quick proof of concept to deploy basic python apps to kubernetes from a notebook session on JupyterHub.
 
 ## Access
 
