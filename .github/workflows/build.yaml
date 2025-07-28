@@ -2,6 +2,10 @@ name: Build and Push Jupyter singleuser image to GHCR
 on:
   push:
     branches: [ master ]
+    paths:
+    - pkg/**
+    - notebooks/**
+    - Dockerfile
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
