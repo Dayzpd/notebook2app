@@ -1,5 +1,6 @@
 import os
 import pathlib
+import uuid
 
 import jinja2
 import kubernetes
@@ -42,6 +43,7 @@ def _render_template(
         namespace         = NAMESPACE,
         app_file          = _convert_nb_to_py(notebook_file),
         requirements_file = requirements_file.read_text(),
+        guid              = uuid.uuid4(),
     ))
 
 
@@ -63,7 +65,7 @@ def deploy(
     name              : str,
     notebook_file     : str,
     requirements_file : str,
-    command           : str  = "python app.py",
+    command           : str  = "python",
     dry_run           : bool = False,
 ) -> None:
     src_dir = _get_src_dir()
@@ -135,4 +137,6 @@ def deploy(
             pretty=True,
         )
 
-    
+        print(f"Your app has been deployed!")
+
+        print(f"It should be available shortly at https://{app_name}.{base_url}")

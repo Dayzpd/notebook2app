@@ -42,7 +42,7 @@ spec:
         command:
         - /bin/bash
         - -c
-        - "python -m pip install --no-cache-dir -r requirements.txt && {{ command }}"
+        - "echo {{ guid }} && python -m pip install --no-cache-dir -r requirements.txt && {{ command }} app.py"
         env:
         - name: PYTHON_PATH
           value: /home/jovyan

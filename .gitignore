@@ -22,3 +22,6 @@ dmypy.json
 
 /coverage.xml
 /.coverage
+
+# base kustomization helm charts
+components/**/base/charts/
