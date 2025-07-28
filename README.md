@@ -1,5 +1,18 @@
 # notebook2app
 
+## Table of Contents
+
+- [Motivation](#motivation)
+- [Access](#access)
+- [Approach](#approach)
+- [Security Concerns](#security-concerns)
+- [Limitations](#limitations)
+- [Infrastructure](#infrastructure)
+    - [Hosting](#hosting)
+    - [Deployments](#deployments)
+    - [Secret Management](#secret-management)
+    - [Ingress, SSL, and DNS](#ingress-ssl-and-dns)
+
 ## Motivation
 
 Where I work if you want to deploy a new application, the process is red tap galore. You need a charge code, product line architect approval, and have to submit at least 3 or 4 service now forms to get repos/azure resource groups. Then you've gotta navigate through the internal yaml frameworks to deploy to a dev/test environment and then do risk assessments before prod.
@@ -14,7 +27,7 @@ The JupyterHub service is accessible at https://notebook2app.zachary.day. If you
 
 ## Approach
 
-I took a basically python script that I had made in my downtime at work and made a basic package out of it ([notebook2app package](pkg/src/notebook2app/)). It uses  Jinja to format kubernetes resources and the Python kubernetes client to deploy those resources. I included this package inside a singleuser jupyterhub image ([Dockerfile](/Dockerfile)), and assigned the singleuser pod a service account with permissions for deployments/services/ingresses/pods/configmaps. This way a user can write an app (e.g. gradio/dash/etc.) in a notebook and use the notebook2app package to deploy it. This looks like the following:
+I took a basically python script that I had made in my downtime at work and made a basic package out of it ([notebook2app package](pkg/src/notebook2app/)). It uses Jinja to format kubernetes resources and the Python kubernetes client to deploy those resources. I included this package inside a singleuser jupyterhub image ([Dockerfile](/Dockerfile)), and assigned the singleuser pod a service account with permissions for deployments/services/ingresses/pods/configmaps. This way a user can write an app (e.g. gradio/dash/etc.) in a notebook and use the notebook2app package to deploy it. This looks like the following:
 
 ```python
 import notebook2app
@@ -29,13 +42,13 @@ notebook2app.deploy(
 
 You can [view the example notebooks here](/notebooks/).
 
+## Security Concerns
+
 **DISCLAIMER: I wouldn't ever recommend doing this in production for a number of reasons:**
 
 1. **Generally speaking, it's not a great idea giving people the ability to interact with the kube-apiserver and create/delete/update resources in the jupyterhub namespace from a notebook.** JupyterHub's documentation discourages [assigning service account to user pods](https://z2jh.jupyter.org/en/latest/administrator/security.html#kubernetes-api-access).
 
-2. Package management is definitely a concern. Allowing people to define any requirement is definitely risky (although standalone JupyterHub is already prone to this risk as is unless you have a private package repo).
-
-3. Lastly, this is more of a limitation, but I'm just converting the notebook files to python files with nbconvert and mounting them from a configmap to the deployed pods. Since ConfigMaps have a maximum size of something like ~1mb, it can't be a massive file. Although the scope of this project isn't intended for large apps so it's not a huge concern.
+2. Package management is definitely a concern. Allowing people to define any requirement is definitely risky (although standalone JupyterHub is already prone to this risk as is unless you have a private package repo or provide curated environments).
 
 This is just a PoC so I've just mitigated risks by enabling Github Oauth with a user whitelist.
 If you're at all curious what a more robust approach would look like, there's two methods off the top of my head:
@@ -44,6 +57,17 @@ If you're at all curious what a more robust approach would look like, there's tw
 
 2. Would be interesting to take advantage of git integration that Jupyterhub has. Since I'm already formatting kubernetes resources, if those land in a git repo, ArgoCD can manage the deployments.
 
+## Limitations
+
+As for limitations, there are many. Here's just a few that come to mind:
+
+1. I'm just converting the notebook files to python files with nbconvert and mounting them from a configmap to the deployed pods. Since ConfigMaps have a maximum size of something like ~1mb, it can't be a massive file. Although the scope of this project isn't intended for large apps so it's not a huge concern.
+
+2. Can only deploy apps confined to a single notebook and also no Conda support. 
+
+3. User access to pod logs is absent. The ideal way to do this would be to use something like loki/promtail for collecting logs and exposing a data source for grafana.
+
+
 
 ## Infrastructure
 
@@ -51,11 +75,13 @@ If you're at all curious what a more robust approach would look like, there's tw
 
 I was curious to test out EKS. I pay for a KodeKloud Pro subscription which gives me access to time limited sandboxes for AWS/Azure/GCP. So I tried that out, and turns out they're pretty locked down. Ran into several permissions issues deploying EKS via terraform, but fortunately KodeKloud provides resources for [deploying EKS in their AWS sandbox with Terraform](https://github.com/kodekloudhub/amazon-elastic-kubernetes-service-course). This wasn't the end of the permissions issues though. Typically in cloud environments like Azure, when you create a `LoadBalancer` service, the cloud provider will provision their flavor of Load Balancer service in the background. However, you can't have externally facing load balancers in KodeKloud's AWS playground.
 
-Not wanting to spend a bunch of time fiddling with KodeKloud's cloud playground, I just transitioned to [Rackspace Spot](https://spot.rackspace.com/). It's been my go-to managed Kubernetes provider since it released a bit over a year ago. They provide a non-HA managed control plane for free, the nodes are dirt cheap, load balancers are flat rate $10/mo, and ssd storage is only $0.06 for a GB per month. It's perfect for side projects. And from past experience, I hardly ever have nodes pre-empted since I place bids 5-10x higher than current market price. While the market price may spike on occasion, it's only for a very short period of time. For a few nodes each with 8vCPU/30gb mem, I've never paid more than $8/mo. As for comparing it to other cloud providers, it's about as vanilla as you can get for a managed kubernetes offering. 
+Not wanting to spend a bunch of time fiddling with KodeKloud's cloud playground, I just transitioned to [Rackspace Spot](https://spot.rackspace.com/). Have used it previously and only took be an hour to get stuff up and running. It's been my go-to managed Kubernetes provider for personal projects since it released a bit over a year ago. They provide a non-HA managed control plane for free, the nodes are dirt cheap, load balancers are flat rate $10/mo, and ssd storage is only $0.06 for a GB per month. It's perfect for side projects. And from past experience, I hardly ever have nodes pre-empted since I place bids 5-10x higher than current market price. While the market price may spike on occasion, it's only for a very short period of time. For a few nodes each with 8vCPU/30gb mem, I've never paid more than $8/mo. As for comparing it to other cloud providers, it's about as vanilla as you can get for a managed kubernetes offering. 
 
 ### Deployments
 
 I'm using ArgoCD with an app of apps pattern. In the `apps/eks` and `apps/rackspace-spot` folders, I've have the ArgoCD Applications for each workload along with a `bootstrap` Application that simply points to its repo path. This way, if I add other Applications to that folder, ArgoCD will automatically detect and deploy new workloads. And for configuraing individual workloads, I use a mix of kustomizations with some helm charts where sensible.
+
+I have a [bootstrap shell script](scripts/bootstrap.sh) that as the name implies, bootstraps ArgoCD. More specifically, it'll install the base kustomizations for ESO (helps to have those CRDs and controller running ahead of time) and ArgoCD. Then installs the bootstrap Application. From there, it's smooth sailing.
 
 ### Secret Management
 
