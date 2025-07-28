@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+helmCharts:
+- name: aws-ebs-csi-driver
+  includeCRDs: true
+  namespace: kube-system
+  releaseName: aws-ebs-csi-driver
+  repo: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+  version: 2.46.0
+  valuesFile: values.yaml
+
+# In the KodeKloud AWS Playground, you need to add this policy.
+# Then assign it to the eksWorkerNodeRole.
+# https://kodekloud.com/community/t/issue-with-pending-pvc-due-to-ebs-csi-driver-provisioning/468614/4
+#
+# {
+#   "Version": "2012-10-17",
+#   "Statement": [
+#     {
+#       "Effect": "Allow",
+#       "Action": [
+#         "ec2:AttachVolume",
+#         "ec2:CreateVolume",
+#         "ec2:DescribeVolumes",
+#         "ec2:DeleteVolume",
+#         "ec2:ModifyVolume",
+#         "ec2:DetachVolume",
+#         "ec2:DescribeAvailabilityZones",
+#         "ec2:CreateTags",
+#         "ec2:DescribeVolumeStatus"
+#       ],
+#       "Resource": "*"
+#     }
+#   ]
+# }
