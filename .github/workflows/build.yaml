@@ -1,0 +1,24 @@
+name: Build and Push Jupyter singleuser image to GHCR
+on:
+  push:
+    branches: [ master ]
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Log in to GHCR
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Build and Push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile
+        push: true
+        tags: |
+          ghcr.io/${{ github.repository_owner }}/notebook2app:latest
+          ghcr.io/${{ github.repository_owner }}/notebook2app:${{ github.run_number }}

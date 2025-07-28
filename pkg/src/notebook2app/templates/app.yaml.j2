@@ -1,0 +1,142 @@
+---
+apiVersion: v1
+data:
+  app.py: |
+    {{ app_file | indent(4) }}
+  requirements.txt: |
+    {{ requirements_file | indent(4) }}
+kind: ConfigMap
+metadata:
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+  labels:
+    app: {{ app_name }}
+    app.kubernetes.io/name: {{ app_name }} 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ app_name }}
+    app.kubernetes.io/name: {{ app_name }} 
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ app_name }}
+      app.kubernetes.io/name: {{ app_name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ app_name }}
+        app.kubernetes.io/name: {{ app_name }}
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - image: quay.io/jupyter/scipy-notebook:python-3.12
+        name: app
+        command:
+        - /bin/bash
+        - -c
+        - "python -m pip install --no-cache-dir -r requirements.txt && {{ command }}"
+        env:
+        - name: PYTHON_PATH
+          value: /home/jovyan
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 250m
+            memory: 256Mi
+        ports:
+        - containerPort: 8888
+          name: http
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsUser: 1000
+        volumeMounts:
+        - name: config
+          mountPath: /home/jovyan
+      securityContext:
+        fsGroup: 100
+      tolerations:
+      - effect: PreferNoSchedule
+        key: spotInstance
+        operator: Equal
+        value: "true"
+      - effect: NoSchedule
+        key: kubernetes.azure.com/scalesetpriority
+        operator: Equal
+        value: spot
+      - effect: NoSchedule
+        key: hub.jupyter.org/dedicated
+        operator: Equal
+        value: user
+      - effect: NoSchedule
+        key: hub.jupyter.org_dedicated
+        operator: Equal
+        value: user
+      - effect: NoExecute
+        key: node.kubernetes.io/not-ready
+        operator: Exists
+        tolerationSeconds: 300
+      - effect: NoExecute
+        key: node.kubernetes.io/unreachable
+        operator: Exists
+        tolerationSeconds: 300
+      volumes:
+      - name: config
+        configMap:
+          name: {{ app_name }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: {{ app_name }}
+    app.kubernetes.io/name: {{ app_name }}
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+spec:
+  ports:
+  - name: http
+    port: 8888
+    targetPort: http
+    protocol: TCP
+  selector:
+    app: {{ app_name }}
+    app.kubernetes.io/name: {{ app_name }}
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  labels:
+    app: {{ app_name }}
+    app.kubernetes.io/name: {{ app_name }}
+  name: {{ app_name }}
+  namespace: {{ namespace }}
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: {{ app_name }}.{{ base_url }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: {{ app_name }}
+            port:
+              name: http
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - {{ app_name }}.{{ base_url }}
+    secretName: {{ app_name }}-tls
